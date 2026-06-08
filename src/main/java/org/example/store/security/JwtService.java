@@ -1,10 +1,11 @@
 package org.example.store.security;
 
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.example.store.entities.User;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
@@ -20,32 +21,39 @@ public class JwtService {
         return Keys.hmacShaKeyFor(SECRET.getBytes());
     }
 
-    // Create token
-    public String generateToken(User user) {
+    // Generate token
+    public String generateToken(UserDetails userDetails) {
         return Jwts.builder()
-                .setSubject(user.getEmail())
+                .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date())
-                .setExpiration(
-                        new Date(System.currentTimeMillis() + 1000 * 60 * 60)
-                )
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60)) // 1 hour
                 .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
     // Extract email
     public String extractUsername(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getSubject();
+        } catch (JwtException | IllegalArgumentException e) {
+            return null;
+        }
     }
 
     // Validate token
-    public boolean isValid(String token, User user) {
-        return extractUsername(token).equals(user.getEmail())
-                && !isExpired(token);
+    public boolean isValid(String token, UserDetails userDetails) {
+        try {
+            String email = extractUsername(token);
+            if (email == null) return false;
+            return email.equals(userDetails.getUsername()) && !isExpired(token);
+        } catch (JwtException | IllegalArgumentException e) {
+            return false;
+        }
     }
 
     private boolean isExpired(String token) {

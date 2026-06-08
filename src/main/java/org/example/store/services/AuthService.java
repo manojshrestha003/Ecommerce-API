@@ -22,6 +22,7 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
 
+        // 1. Authenticate user (checks email + password)
         Authentication authentication =
                 authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(
@@ -30,15 +31,19 @@ public class AuthService {
                         )
                 );
 
-        String email = authentication.getName();
+        // 2. Get UserDetails from authentication
+        org.springframework.security.core.userdetails.UserDetails userDetails = 
+                (org.springframework.security.core.userdetails.UserDetails) authentication.getPrincipal();
 
-        User user = userRepository.findByEmail(email)
+        // 3. Fetch full user from DB for response
+        User user = userRepository.findByEmail(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        String token = jwtService.generateToken(user);
+        // 4. Generate JWT token
+        String token = jwtService.generateToken(userDetails);
 
-        UserResponse userResponse;
-        userResponse = new UserResponse(
+        // 5. Create response DTO
+        UserResponse userResponse = new UserResponse(
                 user.getId(),
                 user.getFirstName(),
                 user.getLastName(),
@@ -46,6 +51,7 @@ public class AuthService {
                 user.getPhone()
         );
 
+        // 6. Return token + user info
         return new AuthResponse(token, userResponse);
     }
 }

@@ -1,5 +1,6 @@
 package org.example.store.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.*;
@@ -20,11 +21,12 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "customer_name", nullable = false)
-    private String customerName;
 
-    @Column(name = "customer_email", nullable = false)
-    private String customerEmail;
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "id",
+            nullable = false, foreignKey = @ForeignKey(name = "fk_orders_users"))
+    private User user;
 
     private String status;
 

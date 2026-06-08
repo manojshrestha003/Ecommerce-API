@@ -17,13 +17,6 @@ import java.util.List;
 @AllArgsConstructor
 public class OrderRequest
 {
-    @NotBlank(message= "Customer name is required")
-    private String customerName;
-
-    @NotBlank(message = "Customer email is required")
-    @Email(message = "Enter a valid Email")
-    private String customerEmail;
-
 
     @Valid
     @NotEmpty(message = "Order must contain at least one item ")
